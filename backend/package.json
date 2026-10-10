@@ -1,0 +1,15 @@
+{
+  "name": "campuslink-backend",
+  "version": "1.0.0",
+  "description": "CampusLink REST API Server with SQLite DB & File Uploads",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
