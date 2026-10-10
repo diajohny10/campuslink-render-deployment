@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: campuslink
+    runtime: node
+    plan: free
+    buildCommand: cd backend && npm ci
+    startCommand: cd backend && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TEACHER_PASSWORD
+        sync: false
