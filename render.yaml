@@ -3,6 +3,7 @@ services:
     name: campuslink
     runtime: node
     plan: free
+    autoDeployTrigger: 'off'
     buildCommand: cd backend && npm ci
     startCommand: cd backend && npm start
     healthCheckPath: /health
