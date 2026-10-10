@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusLink - Private Campus Learning Network</title>
+  <meta name="description" content="CampusLink creates a private campus learning network where students and faculty can access, share and manage educational resources—even when the Internet is unavailable.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar">
+    <div class="brand" onclick="app.showView('landing')">
+      <div class="brand-icon">CL</div>
+      <div>
+        <div class="brand-title">CAMPUSLINK</div>
+        <div class="brand-subtitle">Private Campus Learning Network</div>
+      </div>
+    </div>
+    
+    <div class="nav-actions">
+      <div id="nav-user-info" style="display: none;">
+        <!-- Dynamic user badge populated via JS -->
+      </div>
+      <button id="nav-logout-btn" class="btn btn-danger btn-sm" style="display: none;" onclick="app.logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </div>
+  </nav>
+
+  <div class="view-container">
+
+    <!-- 1. LANDING PAGE (First Page) -->
+    <section id="view-landing" class="page-view active">
+      <div class="landing-hero">
+        <h1 class="landing-title">Learning Doesn't Need the Internet.</h1>
+        <p class="landing-subtitle">
+          CampusLink creates a private campus learning network where students and faculty can access, share and manage educational resources—even when the Internet is unavailable.
+        </p>
+
+        <!-- SINGLE HERO BUTTON NAMED 'NETWORK FEATURES' -->
+        <button class="btn btn-navy" style="margin-top: 1.25rem; font-size: 1rem; padding: 0.85rem 1.8rem;" onclick="document.getElementById('network-features').scrollIntoView({behavior: 'smooth'})">
+          Network Features <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <div class="stats-counter" style="margin-top: 2rem;">
+          <i class="fa-solid fa-shield-check" style="color: #10b981;"></i>
+          <span><strong>1,240 students</strong> &bull; <strong>96 faculty</strong> &bull; <strong>14 departments</strong> already connected</span>
+        </div>
+      </div>
+
+      <!-- PORTAL SELECTION CARDS (Teacher & Student Options) -->
+      <div id="portal-selection" class="roles-grid" style="margin-bottom: 4rem;">
+        <!-- Teacher Login Option -->
+        <div class="glass-panel role-card teacher-card" onclick="app.showView('teacher-login')">
+          <div class="role-avatar">
+            <i class="fa-solid fa-chalkboard-user"></i>
+          </div>
+          <h2 class="role-name">Teacher Login</h2>
+          <button class="btn btn-purple" style="margin-top: 1rem; width: 100%;">
+            Teacher Login
+          </button>
+        </div>
+
+        <!-- Student Login Option -->
+        <div class="glass-panel role-card student-card" onclick="app.showView('student-login')">
+          <div class="role-avatar">
+            <i class="fa-solid fa-user-graduate"></i>
+          </div>
+          <h2 class="role-name">Student Login</h2>
+          <button class="btn btn-primary" style="margin-top: 1rem; width: 100%;">
+            Student Login
+          </button>
+        </div>
+      </div>
+
+      <!-- SYSTEM ARCHITECTURE & CAPABILITIES INFORMATION -->
+      <div id="network-features" class="features-section">
+        <div class="section-title-wrapper" style="text-align: center; margin-bottom: 2.5rem;">
+          <h2 style="font-family: var(--font-heading); font-size: 2.2rem; color: #0b192c;">
+            How CampusLink Works
+          </h2>
+          <p style="color: var(--text-muted); max-width: 650px; margin: 0.5rem auto 0 auto; font-size: 1.05rem;">
+            Designed for zero-internet environments, enabling high-speed local file sharing and course management.
+          </p>
+        </div>
+
+        <!-- 4 Key Feature Cards -->
+        <div class="feature-cards-grid">
+          <div class="glass-card feature-card">
+            <div class="feature-icon" style="background: #e0e7ff; color: #4338ca;">
+              <i class="fa-solid fa-wifi"></i>
+            </div>
+            <h3 class="feature-title">100% Offline Wi-Fi Network</h3>
+            <p class="feature-desc">
+              Connect to local campus Wi-Fi access points without needing cellular data or active internet subscription.
+            </p>
+          </div>
+
+          <div class="glass-card feature-card">
+            <div class="feature-icon" style="background: #dbeafe; color: #1d4ed8;">
+              <i class="fa-solid fa-book-bookmark"></i>
+            </div>
+            <h3 class="feature-title">Subject-Based Resource Hub</h3>
+            <p class="feature-desc">
+              Teachers categorize notes and study materials by subject codes (CN, DS, DMS, ECON, UHV, COA) for easy student access.
+            </p>
+          </div>
+
+          <div class="glass-card feature-card">
+            <div class="feature-icon" style="background: #d1fae5; color: #059669;">
+              <i class="fa-solid fa-paper-plane"></i>
+            </div>
+            <h3 class="feature-title">Peer-to-Peer File Transfer</h3>
+            <p class="feature-desc">
+              Transfer assignments directly to teachers or exchange study materials privately between students in seconds.
+            </p>
+          </div>
+
+          <div class="glass-card feature-card">
+            <div class="feature-icon" style="background: #fef3c7; color: #d97706;">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3 class="feature-title">Privacy & Permission Matrix</h3>
+            <p class="feature-desc">
+              Role-based security protects private student files while providing full audit notifications to course teachers.
+            </p>
+          </div>
+        </div>
+
+        <!-- Process Flow Steps -->
+        <div class="process-wrapper glass-panel" style="margin-top: 3rem; padding: 2.5rem;">
+          <h3 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center; color: #0b192c;">
+            Quick Start Guide
+          </h3>
+          <div class="process-steps-grid">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <h4>Connect to Wi-Fi</h4>
+              <p>Connect your laptop or mobile phone to local Wi-Fi.</p>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <h4>Choose Portal</h4>
+              <p>Click Teacher Login or Student Login on the home page.</p>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <h4>Authenticate</h4>
+              <p>Teachers select Subject Code; Students enter Name.</p>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <h4>Access & Share</h4>
+              <p>Download study notes or send files instantly offline.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. TEACHER LOGIN PAGE -->
+    <section id="view-teacher-login" class="page-view">
+      <div class="auth-wrapper">
+        <div class="glass-panel auth-card">
+          <button class="btn btn-outline btn-sm" style="margin-bottom: 1.5rem;" onclick="app.showView('landing')">
+            <i class="fa-solid fa-arrow-left"></i> Back to Home
+          </button>
+
+          <div class="auth-header">
+            <div class="auth-icon" style="background: #e0e7ff; color: #4338ca;">
+              <i class="fa-solid fa-chalkboard-user"></i>
+            </div>
+            <h2 class="auth-title">Teacher Login</h2>
+            <p class="auth-subtitle">Select your Subject Code & enter password</p>
+          </div>
+
+          <form id="teacher-login-form" onsubmit="app.handleTeacherLogin(event)">
+            <div class="form-group">
+              <label class="form-label" for="teacher-subject-code">Subject Code</label>
+              <select id="teacher-subject-code" class="form-control" required>
+                <option value="" disabled selected>Select Subject Code...</option>
+                <option value="CN">CN - Computer Networks</option>
+                <option value="DS">DS - Data Structures</option>
+                <option value="DMS">DMS - Database Systems</option>
+                <option value="ECON">ECON - Economics</option>
+                <option value="UHV">UHV - Universal Human Values</option>
+                <option value="COA">COA - Computer Architecture</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="teacher-password">Password</label>
+              <input type="password" id="teacher-password" class="form-control" placeholder="Enter password" required>
+            </div>
+
+            <button type="submit" class="btn btn-purple" style="width: 100%; margin-top: 1rem;">
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. STUDENT LOGIN PAGE -->
+    <section id="view-student-login" class="page-view">
+      <div class="auth-wrapper">
+        <div class="glass-panel auth-card">
+          <button class="btn btn-outline btn-sm" style="margin-bottom: 1.5rem;" onclick="app.showView('landing')">
+            <i class="fa-solid fa-arrow-left"></i> Back to Home
+          </button>
+
+          <div class="auth-header">
+            <div class="auth-icon" style="background: #dbeafe; color: #1d4ed8;">
+              <i class="fa-solid fa-user-graduate"></i>
+            </div>
+            <h2 class="auth-title">Student Login</h2>
+            <p class="auth-subtitle">Enter your name and password</p>
+          </div>
+
+          <form id="student-login-form" onsubmit="app.handleStudentLogin(event)">
+            <div class="form-group">
+              <label class="form-label" for="student-name">Student Name</label>
+              <input type="text" id="student-name" class="form-control" placeholder="Enter your registered name" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="student-password">Password</label>
+              <input type="password" id="student-password" class="form-control" placeholder="Enter password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. TEACHER DASHBOARD PORTAL -->
+    <section id="view-teacher-dashboard" class="page-view">
+      <div class="dashboard-grid">
+        
+        <!-- Sidebar: Subject Tabs -->
+        <aside class="glass-panel sidebar">
+          <div class="sidebar-title">Subject Portals</div>
+          <div id="teacher-subject-list" class="subject-nav">
+            <!-- Dynamic Subject Badges -->
+          </div>
+
+          <div class="sidebar-title" style="margin-top: 1.5rem;">Teacher Tools</div>
+          <button class="btn btn-outline btn-sm" style="width: 100%; justify-content: flex-start; margin-bottom: 0.5rem;" onclick="app.showTeacherTab('resources')">
+            <i class="fa-solid fa-folder-open"></i> Subject Resources
+          </button>
+          <button class="btn btn-outline btn-sm" style="width: 100%; justify-content: flex-start; margin-bottom: 0.5rem;" onclick="app.showTeacherTab('inbox')">
+            <i class="fa-solid fa-inbox"></i> Student Inbox
+          </button>
+          <button class="btn btn-outline btn-sm" style="width: 100%; justify-content: flex-start; margin-bottom: 0.5rem;" onclick="app.showTeacherTab('send-student')">
+            <i class="fa-solid fa-paper-plane"></i> Send File to Student
+          </button>
+          <button class="btn btn-outline btn-sm" style="width: 100%; justify-content: flex-start; margin-bottom: 0.5rem;" onclick="app.showTeacherTab('register-student')">
+            <i class="fa-solid fa-user-plus"></i> Register New Student
+          </button>
+          <button class="btn btn-outline btn-sm" style="width: 100%; justify-content: flex-start;" onclick="app.showTeacherTab('notifications')">
+            <i class="fa-solid fa-bell"></i> Transfer Notifications
+          </button>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="glass-panel dashboard-main">
+          
+          <!-- Subject Header -->
+          <div class="section-header">
+            <div>
+              <span class="user-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
+                <span class="role-dot teacher"></span> Teacher Portal &bull; <strong id="teacher-active-subject">CN</strong>
+              </span>
+              <h2 class="section-title" id="teacher-view-title">
+                Subject Resources
+              </h2>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-outline btn-sm" onclick="app.loadResources()">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh
+              </button>
+              <button id="teacher-upload-btn" class="btn btn-purple btn-sm" onclick="app.openUploadModal()">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Upload Resource
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab Content 1: Resources -->
+          <div id="teacher-tab-resources">
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>File Name / Title</th>
+                    <th>Uploaded By</th>
+                    <th>Upload Date</th>
+                    <th>Size</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="teacher-files-tbody">
+                  <!-- Dynamic File Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab Content 2: Student Inbox -->
+          <div id="teacher-tab-inbox" style="display: none;">
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Sender Student</th>
+                    <th>Subject Target</th>
+                    <th>File Name</th>
+                    <th>Sent Date</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="teacher-inbox-tbody">
+                  <!-- Dynamic Inbox Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab Content 3: Send File to Specific Student -->
+          <div id="teacher-tab-send-student" style="display: none;">
+            <div style="max-width: 550px; margin: 0 auto;">
+              <h3 style="margin-bottom: 1rem; font-family: var(--font-heading);">Send Direct File to Student</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">
+                As a teacher, you can transfer feedback or custom material directly to a specific student.
+              </p>
+
+              <div class="glass-card" style="padding: 1.5rem;">
+                <div class="form-group">
+                  <label class="form-label">Recipient Student</label>
+                  <select id="teacher-send-recipient-student" class="form-control">
+                    <!-- Populated dynamically via JS -->
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Document / File Name</label>
+                  <input type="text" id="teacher-send-file-name" class="form-control" placeholder="e.g. Corrected_Assignment_Alice.pdf" value="Feedback_Module1.pdf">
+                </div>
+
+                <button class="btn btn-purple" style="width: 100%;" onclick="app.executeTeacherTransferToStudent()">
+                  <i class="fa-solid fa-paper-plane"></i> Send File to Selected Student
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content 4: Register New Student -->
+          <div id="teacher-tab-register-student" style="display: none;">
+            <div style="max-width: 650px; margin: 0 auto;">
+              <h3 style="margin-bottom: 0.5rem; font-family: var(--font-heading);">Register New Student</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">
+                Add a new student to the CampusLink network. Once registered, the student can log in using their credentials.
+              </p>
+
+              <form id="register-student-form" onsubmit="app.handleRegisterStudent(event)">
+                <div class="glass-card" style="padding: 1.75rem; margin-bottom: 2rem;">
+                  <div class="form-group">
+                    <label class="form-label" for="reg-student-name">Full Student Name</label>
+                    <input type="text" id="reg-student-name" class="form-control" placeholder="Student name" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="reg-student-id">Student ID / Roll No.</label>
+                    <input type="text" id="reg-student-id" class="form-control" placeholder="e.g. CS2026-089" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="reg-student-section">Section / Class</label>
+                    <select id="reg-student-section" class="form-control" required>
+                      <option value="CS Sec A">CS Sec A</option>
+                      <option value="CS Sec B">CS Sec B</option>
+                      <option value="CS Sec C">CS Sec C</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="reg-student-password">Default Password</label>
+                    <input type="password" id="reg-student-password" class="form-control" placeholder="Set a password" required>
+                  </div>
+
+                  <button type="submit" class="btn btn-purple" style="width: 100%; margin-top: 0.5rem;">
+                    <i class="fa-solid fa-user-plus"></i> Register Student to Network
+                  </button>
+                </div>
+              </form>
+
+              <h4 style="margin-bottom: 1rem; font-family: var(--font-heading);">Registered Students Roster</h4>
+              <div class="data-table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Student Name</th>
+                      <th>Student ID</th>
+                      <th>Section</th>
+                    </tr>
+                  </thead>
+                  <tbody id="registered-students-tbody">
+                    <!-- Dynamic Roster Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content 5: Notifications -->
+          <div id="teacher-tab-notifications" style="display: none;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+              <i class="fa-solid fa-shield-halved"></i> Audit Mode: System logs transfer metadata only.
+            </p>
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Event Type</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="teacher-logs-tbody">
+                  <!-- Dynamic Log Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </main>
+      </div>
+    </section>
+
+    <!-- 5. STUDENT DASHBOARD PORTAL -->
+    <section id="view-student-dashboard" class="page-view">
+      <div class="dashboard-grid">
+        
+        <!-- Sidebar: Student Tabs -->
+        <aside class="glass-panel sidebar">
+          <div class="sidebar-title">Subject Filter</div>
+          <div id="student-subject-list" class="subject-nav">
+            <!-- Dynamic Subject Filters -->
+          </div>
+
+          <div class="sidebar-title" style="margin-top: 1.5rem;">Student Hub</div>
+          <button class="btn btn-outline btn-sm" style="width: 100%; justify-content: flex-start; margin-bottom: 0.5rem;" onclick="app.showStudentTab('resources')">
+            <i class="fa-solid fa-book"></i> Browse Resources
+          </button>
+          <button class="btn btn-outline btn-sm" style="width: 100%; justify-content: flex-start; margin-bottom: 0.5rem;" onclick="app.showStudentTab('transfer')">
+            <i class="fa-solid fa-paper-plane"></i> Send File (Transfer)
+          </button>
+          <button class="btn btn-outline btn-sm" style="width: 100%; justify-content: flex-start;" onclick="app.showStudentTab('inbox')">
+            <i class="fa-solid fa-box-archive"></i> Private Inbox & Transfers
+          </button>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="glass-panel dashboard-main">
+          
+          <!-- Header -->
+          <div class="section-header">
+            <div>
+              <span class="user-badge" style="margin-bottom: 0.5rem; display: inline-flex;">
+                <span class="role-dot student"></span> Student Portal &bull; <strong id="student-display-name">Student</strong>
+              </span>
+              <h2 class="section-title" id="student-view-title">Subject Learning Materials</h2>
+            </div>
+            
+            <button class="btn btn-outline btn-sm" onclick="app.loadResources()">
+              <i class="fa-solid fa-arrows-rotate"></i> Refresh
+            </button>
+          </div>
+
+          <!-- Student Tab: Resources -->
+          <div id="student-tab-resources">
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>File Name / Title</th>
+                    <th>Subject</th>
+                    <th>Uploaded By</th>
+                    <th>Size</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="student-resources-tbody">
+                  <!-- Dynamic Resource Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Student Tab: File Transfer Hub -->
+          <div id="student-tab-transfer" style="display: none;">
+            <div style="max-width: 550px; margin: 0 auto;">
+              <h3 style="margin-bottom: 1rem; font-family: var(--font-heading);">Campus File Transfer Hub</h3>
+              
+              <div class="glass-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+                <div class="form-group">
+                  <label class="form-label">Transfer Type</label>
+                  <select id="transfer-target-type" class="form-control" onchange="app.toggleTransferRecipientOptions()">
+                    <option value="student">Send File to Another Student (Private)</option>
+                    <option value="teacher">Send File to Teacher (Assignment Submission)</option>
+                  </select>
+                </div>
+
+                <div class="form-group" id="recipient-student-group">
+                  <label class="form-label">Recipient Student</label>
+                  <select id="transfer-recipient-student" class="form-control">
+                    <!-- Populated dynamically via JS -->
+                  </select>
+                </div>
+
+                <div class="form-group" id="recipient-teacher-group" style="display: none;">
+                  <label class="form-label">Target Subject Teacher</label>
+                  <select id="transfer-recipient-teacher" class="form-control">
+                    <option value="CN">CN - Teacher (Computer Networks)</option>
+                    <option value="DS">DS - Teacher (Data Structures)</option>
+                    <option value="DMS">DMS - Teacher (Database Systems)</option>
+                    <option value="ECON">ECON - Teacher (Economics)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">File Name / Document</label>
+                  <input type="text" id="transfer-file-name" class="form-control" placeholder="e.g. Assignment_1_CN.pdf" value="Project_Report_v1.pdf">
+                </div>
+
+                <button class="btn btn-primary" style="width: 100%;" onclick="app.executeStudentTransfer()">
+                  <i class="fa-solid fa-paper-plane"></i> Send File
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Student Tab: Private Inbox & History -->
+          <div id="student-tab-inbox" style="display: none;">
+            <h3 style="margin-bottom: 1rem; font-family: var(--font-heading);">Received Private Files & Transfer Log</h3>
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>From / To</th>
+                    <th>File Name</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="student-inbox-tbody">
+                  <!-- Dynamic Inbox Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </main>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- UPLOAD MODAL FOR TEACHER -->
+  <div id="modal-upload" class="modal-backdrop">
+    <div class="glass-panel modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 style="font-family: var(--font-heading);"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Subject Resource</h3>
+        <button class="close-modal" onclick="app.closeModal('modal-upload')">&times;</button>
+      </div>
+
+      <form id="upload-form" onsubmit="app.handleResourceUpload(event)">
+        <div class="form-group">
+          <label class="form-label">Subject Code (Locked)</label>
+          <input type="text" id="upload-subject-code" class="form-control" readonly style="background: #e2e8f0; font-weight: 700; color: #0f294a;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Select File to Upload <span style="color: var(--danger);">*</span></label>
+          <input type="file" id="upload-file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.png,.jpg,.jpeg" required onchange="app.handleFileSelectChange(event)">
+          <div id="file-selected-info" style="font-size: 0.85rem; color: var(--accent-indigo); font-weight: 600; margin-top: 0.4rem; display: none;"></div>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem;">
+            Supported formats: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, PNG, JPG, JPEG (Max 25 MiB).
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Display Title (Optional)</label>
+          <input type="text" id="upload-file-title" class="form-control" placeholder="Defaults to filename if left empty">
+        </div>
+
+        <button type="submit" id="btn-submit-upload" class="btn btn-purple" style="width: 100%; margin-top: 1rem;">
+          <i class="fa-solid fa-upload"></i> Publish File for Students
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
