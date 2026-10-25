@@ -50,6 +50,7 @@ class CampusNetApp {
             return;
           } else {
             await this.loadResources();
+            await this.loadStudentRoster();
             await this.loadTransfers();
             this.renderStudentDashboard();
             this.showView('student-dashboard');
@@ -199,6 +200,7 @@ class CampusNetApp {
         this.showToast(`Welcome back, ${data.user.name}!`, 'success');
 
         await this.loadResources();
+        await this.loadStudentRoster();
         await this.loadTransfers();
 
         this.renderStudentDashboard();
@@ -264,10 +266,11 @@ class CampusNetApp {
   }
 
   async loadStudentRoster() {
-    if (!this.token || !this.currentUser || this.currentUser.role !== 'teacher') return;
+    if (!this.token || !this.currentUser || !['teacher', 'student'].includes(this.currentUser.role)) return;
 
     try {
-      const res = await fetch(`${this.apiBase}/students`, {
+      const rosterPath = this.currentUser.role === 'teacher' ? '/students' : '/students/roster';
+      const res = await fetch(`${this.apiBase}${rosterPath}`, {
         headers: this.getAuthHeaders()
       });
 
@@ -275,7 +278,7 @@ class CampusNetApp {
         const data = await res.json();
         this.students = data.students || [];
         this.updateStudentDropdowns();
-        this.renderRegisteredStudentsRoster();
+        if (this.currentUser.role === 'teacher') this.renderRegisteredStudentsRoster();
       }
     } catch (err) {}
   }
@@ -305,8 +308,8 @@ class CampusNetApp {
     const teacherRecipientEl = document.getElementById('teacher-send-recipient-student');
     const studentRecipientEl = document.getElementById('transfer-recipient-student');
 
-    const optionsHtml = (this.students || []).map(s => `
-      <option value="${this.escapeHtml(s.name)}">${this.escapeHtml(s.name)} (${this.escapeHtml(s.section)})</option>
+    const optionsHtml = `<option value="">Select a student...</option>` + (this.students || []).map(s => `
+      <option value="${this.escapeHtml(s.id)}">${this.escapeHtml(s.name)} (${this.escapeHtml(s.section)})</option>
     `).join('');
 
     if (teacherRecipientEl) teacherRecipientEl.innerHTML = optionsHtml;
@@ -818,7 +821,7 @@ class CampusNetApp {
     if (!tbody) return;
 
     const teacherName = `Teacher ${this.activeTeacherSubject}`;
-    const submissions = (this.transfers || []).filter(t => t.type === 'student_to_teacher' && (t.to === teacherName || t.subject === this.activeTeacherSubject));
+    const submissions = (this.transfers || []).filter(t => t.type === 'student_to_teacher' && t.to === teacherName);
 
     if (submissions.length === 0) {
       tbody.innerHTML = `
@@ -846,10 +849,10 @@ class CampusNetApp {
             ${this.escapeHtml(sub.fileName)}
           </div>
         </td>
-        <td>${this.escapeHtml(sub.date)}</td>
+        <td>${this.escapeHtml(this.formatTransferDate(sub.date))}</td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="app.showToast('Submission records are metadata logs in this demo flow.', 'info')">
-            <i class="fa-solid fa-info-circle"></i> Demo Submission
+          <button class="btn btn-primary btn-sm" onclick="app.downloadTransfer('${this.escapeHtml(sub.id)}')">
+            <i class="fa-solid fa-download"></i> Download
           </button>
         </td>
       </tr>
@@ -899,8 +902,8 @@ class CampusNetApp {
     const tbody = document.getElementById('student-inbox-tbody');
     if (!tbody || !this.currentUser) return;
 
-    const myName = this.currentUser.name;
-    const history = (this.transfers || []).filter(t => t.from === myName || t.to === myName);
+    const myId = this.currentUser.studentId;
+    const history = (this.transfers || []).filter(t => (t.fromId === myId || t.toId === myId) && !t.auditOnly);
 
     if (history.length === 0) {
       tbody.innerHTML = `
@@ -917,10 +920,10 @@ class CampusNetApp {
     }
 
     tbody.innerHTML = history.map(t => {
-      const isSender = t.from === myName;
+      const isSender = t.fromId === myId;
       return `
         <tr>
-          <td style="font-family: monospace; color: var(--text-muted);">${this.escapeHtml(t.date)}</td>
+          <td style="font-family: monospace; color: var(--text-muted);">${this.escapeHtml(this.formatTransferDate(t.date))}</td>
           <td>
             <span class="badge" style="background: #f1f5f9; color: ${isSender ? 'var(--warning)' : 'var(--success)'}; font-weight:700;">
               ${isSender ? 'SENT' : 'RECEIVED'}
@@ -933,11 +936,7 @@ class CampusNetApp {
               ${this.escapeHtml(t.fileName)}
             </div>
           </td>
-          <td>
-            <button class="btn btn-outline btn-sm" onclick="app.showToast('Transfer records are metadata logs in this demo flow.', 'info')">
-              <i class="fa-solid fa-info-circle"></i> Demo Log
-            </button>
-          </td>
+          <td>${t.filename ? `<button class="btn btn-primary btn-sm" onclick="app.downloadTransfer('${this.escapeHtml(t.id)}')"><i class="fa-solid fa-download"></i> Download</button>` : '<span class="text-muted">No file attached</span>'}</td>
         </tr>
       `;
     }).join('');
@@ -949,73 +948,104 @@ class CampusNetApp {
     document.getElementById('recipient-teacher-group').style.display = type === 'teacher' ? 'block' : 'none';
   }
 
+  updateTransferFileName(event) {
+    const file = event.target.files && event.target.files[0];
+    const display = document.getElementById('transfer-file-name-display');
+    if (display) display.textContent = file ? `${file.name} (${this.formatBytes(file.size)})` : 'No file selected';
+  }
+
   async executeStudentTransfer() {
     const type = document.getElementById('transfer-target-type').value;
-    const fileName = document.getElementById('transfer-file-name').value.trim();
-
-    if (!fileName) {
-      this.showToast('Please enter a file name to transfer', 'error');
+    const file = document.getElementById('transfer-file').files[0];
+    if (!file) {
+      this.showToast('Please choose a file to transfer', 'error');
       return;
     }
+    if (file.size > 25 * 1024 * 1024) return this.showToast('File size exceeds the 25 MiB limit', 'error');
 
-    let recipient = '';
+    let recipientId = '';
     let targetSubject = null;
 
     if (type === 'student') {
-      recipient = document.getElementById('transfer-recipient-student').value;
+      recipientId = document.getElementById('transfer-recipient-student').value;
     } else {
       targetSubject = document.getElementById('transfer-recipient-teacher').value;
-      recipient = `Teacher ${targetSubject}`;
     }
+    if (type === 'student' && !recipientId) return this.showToast('Please select a student recipient', 'error');
 
     try {
-      await fetch(`${this.apiBase}/transfers`, {
-        method: 'POST',
-        headers: this.getAuthHeaders('application/json'),
-        body: JSON.stringify({
-          from: this.currentUser.name,
-          to: recipient,
-          type: type === 'student' ? 'student_to_student' : 'student_to_teacher',
-          subject: targetSubject,
-          fileName: fileName
-        })
-      });
-      this.showToast(`Transfer log recorded for "${fileName}" to ${recipient}!`, 'success');
+      const form = new FormData();
+      form.append('file', file);
+      form.append('type', type === 'student' ? 'student_to_student' : 'student_to_teacher');
+      if (recipientId) form.append('recipientId', recipientId);
+      if (targetSubject) form.append('subject', targetSubject);
+      const response = await fetch(`${this.apiBase}/transfers`, { method: 'POST', headers: this.getAuthHeaders(), body: form });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Transfer failed');
+      this.showToast(`File sent to ${data.transfer.to}`, 'success');
+      document.getElementById('transfer-file').value = '';
+      this.updateTransferFileName({ target: document.getElementById('transfer-file') });
       await this.loadTransfers();
       this.showStudentTab('inbox');
     } catch (err) {
-      this.showToast('Network error recording transfer log', 'error');
+      this.showToast(err.message || 'Network error sending file', 'error');
     }
   }
 
   async executeTeacherTransferToStudent() {
     const recipient = document.getElementById('teacher-send-recipient-student').value;
-    const fileName = document.getElementById('teacher-send-file-name').value.trim();
+    const file = document.getElementById('teacher-send-file').files[0];
     const mySubject = this.currentUser ? this.currentUser.subjectCode : 'CN';
 
-    if (!fileName) {
-      this.showToast('Please enter a file name to send', 'error');
+    if (!file) {
+      this.showToast('Please choose a file to send', 'error');
       return;
     }
+    if (file.size > 25 * 1024 * 1024) return this.showToast('File size exceeds the 25 MiB limit', 'error');
+    if (!recipient) return this.showToast('Please select a student recipient', 'error');
 
     try {
-      await fetch(`${this.apiBase}/transfers`, {
-        method: 'POST',
-        headers: this.getAuthHeaders('application/json'),
-        body: JSON.stringify({
-          from: `Teacher ${mySubject}`,
-          to: recipient,
-          type: 'teacher_to_student',
-          subject: mySubject,
-          fileName
-        })
-      });
-      this.showToast(`Transfer log recorded for "${fileName}" to ${recipient}!`, 'success');
+      const form = new FormData();
+      form.append('file', file);
+      form.append('type', 'teacher_to_student');
+      form.append('recipientId', recipient);
+      form.append('subject', mySubject);
+      const response = await fetch(`${this.apiBase}/transfers`, { method: 'POST', headers: this.getAuthHeaders(), body: form });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Transfer failed');
+      this.showToast(`File sent to ${data.transfer.to}`, 'success');
+      document.getElementById('teacher-send-file').value = '';
       await this.loadTransfers();
       this.showTeacherTab('notifications');
     } catch (err) {
-      this.showToast('Network error recording transfer log', 'error');
+      this.showToast(err.message || 'Network error sending file', 'error');
     }
+  }
+
+  async downloadTransfer(transferId) {
+    try {
+      const response = await fetch(`${this.apiBase}/transfers/${encodeURIComponent(transferId)}/download`, { headers: this.getAuthHeaders() });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Download failed');
+      }
+      const transfer = this.transfers.find(item => String(item.id) === String(transferId));
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = transfer ? transfer.fileName : 'campuslink-file';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      this.showToast(err.message || 'Network error downloading file', 'error');
+    }
+  }
+
+  formatTransferDate(value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
   }
 
   showToast(message, type = 'info') {

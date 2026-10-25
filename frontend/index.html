@@ -349,8 +349,8 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Document / File Name</label>
-                  <input type="text" id="teacher-send-file-name" class="form-control" placeholder="e.g. Corrected_Assignment_Alice.pdf" value="Feedback_Module1.pdf">
+                  <label class="form-label" for="teacher-send-file">Choose file (max 25 MiB)</label>
+                  <input type="file" id="teacher-send-file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.png,.jpg,.jpeg" required>
                 </div>
 
                 <button class="btn btn-purple" style="width: 100%;" onclick="app.executeTeacherTransferToStudent()">
@@ -421,7 +421,7 @@
           <!-- Tab Content 5: Notifications -->
           <div id="teacher-tab-notifications" style="display: none;">
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              <i class="fa-solid fa-shield-halved"></i> Audit Mode: System logs transfer metadata only.
+              <i class="fa-solid fa-shield-halved"></i> Transfer audit log.
             </p>
             <div class="data-table-container">
               <table class="data-table">
@@ -535,8 +535,14 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">File Name / Document</label>
-                  <input type="text" id="transfer-file-name" class="form-control" placeholder="e.g. Assignment_1_CN.pdf" value="Project_Report_v1.pdf">
+                  <label class="form-label" for="transfer-file">Choose a file from your device (max 25 MiB)</label>
+                  <input type="file" id="transfer-file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.png,.jpg,.jpeg" required onchange="app.updateTransferFileName(event)" style="display:none;">
+                  <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('transfer-file').click()">
+                      <i class="fa-solid fa-folder-open"></i> Browse Files
+                    </button>
+                    <small id="transfer-file-name-display" style="color:var(--text-muted);" aria-live="polite">No file selected</small>
+                  </div>
                 </div>
 
                 <button class="btn btn-primary" style="width: 100%;" onclick="app.executeStudentTransfer()">

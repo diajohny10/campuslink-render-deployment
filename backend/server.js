@@ -190,6 +190,17 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { success: true, students: db.getStudents() });
     }
 
+    if (pathname === '/api/students/roster' && method === 'GET') {
+      const user = auth.authenticateRequest(req);
+      if (!user || user.role !== 'student') {
+        return sendJson(res, 401, { success: false, message: 'Authentication required as student' });
+      }
+      return sendJson(res, 200, {
+        success: true,
+        students: db.getStudents().filter(student => student.id !== user.studentId)
+      });
+    }
+
     if (pathname === '/api/students/register' && method === 'POST') {
       const user = auth.authenticateRequest(req);
       if (!user || user.role !== 'teacher') {
@@ -484,12 +495,42 @@ const server = http.createServer(async (req, res) => {
     // ----------------------------------------------------
     // TRANSFERS & NOTIFICATIONS ROUTES
     // ----------------------------------------------------
+    if (pathname.startsWith('/api/transfers/') && pathname.endsWith('/download') && method === 'GET') {
+      const user = auth.authenticateRequest(req);
+      if (!user) return sendJson(res, 401, { success: false, message: 'Authentication required' });
+      const transferId = pathname.split('/')[3];
+      const transfer = db.getTransferById(transferId);
+      const userId = user.role === 'teacher' ? user.name : user.studentId;
+      if (!transfer || (transfer.fromId !== userId && transfer.toId !== userId)) {
+        return sendJson(res, 404, { success: false, message: 'Transfer not found' });
+      }
+      const filePath = storage.getFilePath(transfer.filename);
+      if (!filePath || !fs.existsSync(filePath)) {
+        return sendJson(res, 404, { success: false, message: 'Transferred file is no longer available' });
+      }
+      const downloadName = encodeURIComponent(storage.sanitizeFilename(transfer.fileName));
+      res.writeHead(200, {
+        'Content-Type': transfer.mimeType || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename*=UTF-8''${downloadName}`,
+        'X-Content-Type-Options': 'nosniff',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With'
+      });
+      const stream = fs.createReadStream(filePath);
+      stream.on('error', err => {
+        console.error('Transfer download stream error:', err);
+        if (!res.headersSent) sendJson(res, 500, { success: false, message: 'Error streaming transferred file' });
+      });
+      stream.pipe(res);
+      return;
+    }
+
     if (pathname === '/api/transfers' && method === 'GET') {
       const user = auth.authenticateRequest(req);
       if (!user) {
         return sendJson(res, 401, { success: false, message: 'Authentication required' });
       }
-      return sendJson(res, 200, { success: true, transfers: db.getTransfers() });
+      return sendJson(res, 200, { success: true, transfers: db.getUserTransfers(user) });
     }
 
     if (pathname === '/api/transfers/my-transfers' && method === 'GET') {
@@ -497,8 +538,7 @@ const server = http.createServer(async (req, res) => {
       if (!user) {
         return sendJson(res, 401, { success: false, message: 'Authentication required' });
       }
-      const userName = parsedUrl.searchParams.get('user') || user.name;
-      return sendJson(res, 200, { success: true, transfers: db.getUserTransfers(userName) });
+      return sendJson(res, 200, { success: true, transfers: db.getUserTransfers(user) });
     }
 
     if (pathname === '/api/transfers' && method === 'POST') {
@@ -507,27 +547,131 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 401, { success: false, message: 'Authentication required' });
       }
 
-      const body = await parseJsonBody(req);
-      if (!body) return sendJson(res, 400, { success: false, message: 'Invalid JSON payload' });
-
-      const { from, to, type, subject, fileName } = body;
-
-      if (!from || !to || !fileName) {
-        return sendJson(res, 400, { success: false, message: 'From, To, and File Name are required' });
+      if (user.role !== 'student' && user.role !== 'teacher') {
+        return sendJson(res, 403, { success: false, message: 'Only students and teachers can transfer files' });
+      }
+      const contentType = req.headers['content-type'] || '';
+      if (!contentType.includes('multipart/form-data')) {
+        return sendJson(res, 400, { success: false, message: 'Attach a file using multipart/form-data' });
       }
 
-      const transfer = db.addTransfer({
-        id: Date.now(),
-        from: from,
-        to: to,
-        type: type || 'student_to_student',
-        subject: subject || null,
-        fileName: fileName,
-        date: new Date().toLocaleTimeString(),
-        timestamp: new Date().toLocaleString()
+      let busboy;
+      try {
+        busboy = Busboy({ headers: req.headers, limits: { fileSize: 25 * 1024 * 1024, files: 1, fields: 4 } });
+      } catch (err) {
+        return sendJson(res, 400, { success: false, message: 'Malformed multipart request' });
+      }
+
+      const fields = {};
+      let tempFilename = null;
+      let fileName = '';
+      let fileExtension = '';
+      let bytesWritten = 0;
+      let fileProcessed = false;
+      let fileTruncated = false;
+      let uploadError = null;
+      let writeStream = null;
+
+      busboy.on('field', (name, value) => { fields[name] = value; });
+      busboy.on('file', (fieldname, fileStream, info) => {
+        if (fieldname !== 'file' || fileProcessed) {
+          uploadError = new Error('Attach one file using the file field');
+          fileStream.resume();
+          return;
+        }
+        fileProcessed = true;
+        fileName = storage.sanitizeFilename(info.filename);
+        fileExtension = storage.getExtension(fileName);
+        if (!storage.isValidExtension(fileExtension)) {
+          uploadError = new Error('File type is not supported');
+          fileStream.resume();
+          return;
+        }
+        tempFilename = storage.generateStorageFilename(fileExtension);
+        const filePath = storage.getFilePath(tempFilename);
+        if (!filePath) {
+          uploadError = new Error('Invalid storage path');
+          fileStream.resume();
+          return;
+        }
+        writeStream = fs.createWriteStream(filePath);
+        fileStream.on('data', chunk => { bytesWritten += chunk.length; });
+        fileStream.on('limit', () => {
+          fileTruncated = true;
+          uploadError = new Error('File size exceeds maximum limit of 25 MiB');
+        });
+        writeStream.on('error', err => { uploadError = err; });
+        fileStream.pipe(writeStream);
       });
 
-      return sendJson(res, 201, { success: true, message: 'Transfer recorded', transfer: transfer });
+      busboy.on('finish', () => {
+        const cleanup = () => { if (tempFilename) storage.deleteFile(tempFilename); };
+        const fail = (status, message) => {
+          cleanup();
+          sendJson(res, status, { success: false, message });
+        };
+        const finish = async () => {
+          if (writeStream && !writeStream.closed) await new Promise(resolve => writeStream.once('close', resolve));
+          if (uploadError || fileTruncated || !fileProcessed || bytesWritten === 0) {
+            return fail(400, uploadError?.message || (!fileProcessed ? 'No file attached' : 'Uploaded file is empty'));
+          }
+
+          const type = fields.type;
+          const recipientId = fields.recipientId;
+          const subject = (fields.subject || '').toUpperCase();
+          let recipient;
+          let toId;
+
+          if (user.role === 'student' && type === 'student_to_student') {
+            recipient = db.getStudents().find(student => student.id === recipientId);
+            if (!recipient || recipient.id === user.studentId) return fail(400, 'Choose another registered student');
+            toId = recipient.id;
+          } else if (user.role === 'student' && type === 'student_to_teacher') {
+            if (!auth.isValidSubject(subject)) return fail(400, 'Choose a valid subject teacher');
+            recipient = { name: `Teacher ${subject}` };
+            toId = recipient.name;
+          } else if (user.role === 'teacher' && type === 'teacher_to_student') {
+            recipient = db.getStudents().find(student => student.id === recipientId);
+            if (!recipient) return fail(400, 'Choose a registered student');
+            toId = recipient.id;
+          } else {
+            return fail(403, 'This transfer type is not allowed for your account');
+          }
+
+          const now = new Date().toISOString();
+          const transfer = {
+            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
+            from: user.name,
+            fromId: user.role === 'teacher' ? user.name : user.studentId,
+            to: recipient.name,
+            toId,
+            type,
+            subject: subject || (user.role === 'teacher' ? user.subjectCode : null),
+            fileName,
+            filename: tempFilename,
+            mimeType: storage.getMimeType(fileExtension),
+            sizeBytes: bytesWritten,
+            size: storage.formatSize(bytesWritten),
+            date: now,
+            timestamp: now
+          };
+
+          try {
+            db.addTransfer(transfer);
+            return sendJson(res, 201, { success: true, message: 'File transferred successfully', transfer });
+          } catch (err) {
+            return fail(500, 'Failed to save transfer');
+          }
+        };
+        finish().catch(err => fail(500, 'Failed to process transfer'));
+      });
+
+      req.on('error', () => {
+        if (tempFilename) storage.deleteFile(tempFilename);
+        if (!res.headersSent) sendJson(res, 500, { success: false, message: 'Transfer stream failed' });
+      });
+      req.pipe(busboy);
+      return;
     }
 
     // Default 404 for unknown endpoints

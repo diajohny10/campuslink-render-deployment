@@ -122,11 +122,18 @@ class Database {
     return this.data.transfers || [];
   }
 
-  getUserTransfers(userName) {
-    if (!userName) return [];
+  getTransferById(id) {
+    return (this.data.transfers || []).find(t => String(t.id) === String(id)) || null;
+  }
+
+  getUserTransfers(user) {
+    if (!user) return [];
+    const userId = user.role === 'teacher' ? user.name : user.studentId;
     return (this.data.transfers || []).filter(t => 
-      (t.from && t.from.toLowerCase() === userName.toLowerCase()) || 
-      (t.to && t.to.toLowerCase() === userName.toLowerCase())
+      (user.role === 'teacher' && t.type === 'student_to_teacher' && t.to === user.name) ||
+      (t.fromId && t.fromId === userId) ||
+      (t.toId && t.toId === userId) ||
+      (!t.fromId && (t.from === user.name || t.to === user.name))
     );
   }
 
