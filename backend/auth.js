@@ -37,6 +37,15 @@ function destroySession(token) {
   return SESSIONS.delete(token);
 }
 
+function destroyStudentSessions(studentIds) {
+  const ids = new Set(studentIds.map(String));
+  for (const [token, session] of SESSIONS) {
+    if (session.user.role === 'student' && ids.has(String(session.user.studentId))) {
+      SESSIONS.delete(token);
+    }
+  }
+}
+
 function authenticateRequest(req) {
   const authHeader = req.headers['authorization'] || req.headers['Authorization'];
   if (!authHeader) return null;
@@ -56,6 +65,7 @@ module.exports = {
   createSession,
   getSession,
   destroySession,
+  destroyStudentSessions,
   authenticateRequest,
   isValidSubject,
   VALID_SUBJECTS

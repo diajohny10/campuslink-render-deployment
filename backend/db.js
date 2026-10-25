@@ -61,6 +61,18 @@ class Database {
     }
   }
 
+  clearStudents() {
+    const previousStudents = this.data.students;
+    this.data.students = [];
+    try {
+      this.save();
+      return previousStudents.length;
+    } catch (err) {
+      this.data.students = previousStudents;
+      throw err;
+    }
+  }
+
   // --- RESOURCES API ---
   getResources(subject = null) {
     let list = this.data.resources || [];

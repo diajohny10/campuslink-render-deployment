@@ -815,6 +815,28 @@ class CampusNetApp {
     }
   }
 
+  async removeAllStudents() {
+    if (!this.currentUser || this.currentUser.role !== 'teacher') return;
+    if (!confirm('Remove every registered student from CampusLink? Students will no longer be able to log in. This keeps resources and transfer records.')) return;
+
+    const button = document.getElementById('remove-all-students-btn');
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(`${this.apiBase}/students`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders()
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Could not remove registered students');
+      await this.loadStudentRoster();
+      this.showToast(data.message, 'success');
+    } catch (err) {
+      this.showToast(err.message || 'Could not remove registered students', 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
   // --- TRANSFERS DEMO FLOWS ---
   renderTeacherInboxTable() {
     const tbody = document.getElementById('teacher-inbox-tbody');

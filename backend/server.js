@@ -190,6 +190,27 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { success: true, students: db.getStudents() });
     }
 
+    if (pathname === '/api/students' && method === 'DELETE') {
+      const user = auth.authenticateRequest(req);
+      if (!user || user.role !== 'teacher') {
+        return sendJson(res, 401, { success: false, message: 'Authentication required as teacher' });
+      }
+
+      try {
+        const studentIds = db.getStudents().map(student => student.id);
+        const removedCount = db.clearStudents();
+        auth.destroyStudentSessions(studentIds);
+        return sendJson(res, 200, {
+          success: true,
+          removedCount,
+          message: `Removed ${removedCount} registered student${removedCount === 1 ? '' : 's'}.`
+        });
+      } catch (err) {
+        console.error('Unable to remove registered students:', err);
+        return sendJson(res, 500, { success: false, message: 'Unable to remove registered students' });
+      }
+    }
+
     if (pathname === '/api/students/roster' && method === 'GET') {
       const user = auth.authenticateRequest(req);
       if (!user || user.role !== 'student') {
